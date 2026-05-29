@@ -1,8 +1,8 @@
 name: G970F
 
 on:
- workflow_dispatch:
- push:
+  workflow_dispatch:
+  push:
 
 env:
   TOOLCHAIN: default
@@ -16,7 +16,7 @@ jobs:
         model: [ "G970F" ]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install mkbootimg
       run: |
         wget -q https://android.googlesource.com/platform/system/tools/mkbootimg/+archive/refs/heads/master.tar.gz -O - | tar xzf - mkbootimg.py
@@ -63,12 +63,12 @@ jobs:
     - name: Create CruelKernel-${{ matrix.model }}.img
       run: ./cruelbuild :mkimg
     - name: Upload Kernel
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: CruelKernel-${{ matrix.model }}
         path: CruelKernel-*.img
     - name: Upload Kernel Info
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ConfigurationInfo-${{ matrix.model }}
         path: config.*
