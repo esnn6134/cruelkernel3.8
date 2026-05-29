@@ -17,6 +17,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Install Missing Libtinfo5
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libtinfo5
+        
     - name: Install mkbootimg
       run: |
         wget -q https://android.googlesource.com/platform/system/tools/mkbootimg/+archive/refs/heads/master.tar.gz -O - | tar xzf - mkbootimg.py
