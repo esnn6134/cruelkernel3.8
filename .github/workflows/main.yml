@@ -24,11 +24,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libtinfo5
         
-    - name: Install mkbootimg
+    - name: Install Stable mkbootimg
       run: |
-        wget -q https://android.googlesource.com/platform/system/tools/mkbootimg/+archive/refs/heads/master.tar.gz -O - | tar xzf - mkbootimg.py
-        chmod +x mkbootimg.py
-        sudo mv mkbootimg.py /usr/local/bin/mkbootimg
+        wget -q https://raw.githubusercontent.com/osm0sis/mkbootimg/master/mkbootimg.py -O mkbootimg
+        chmod +x mkbootimg
+        sudo mv mkbootimg /usr/local/bin/mkbootimg
     - name: Install mkdtboimg
       run: |
         wget -q https://android.googlesource.com/platform/system/libufdt/+archive/refs/heads/master.tar.gz -O - | tar --strip-components 2 -xzf - utils/src/mkdtboimg.py
