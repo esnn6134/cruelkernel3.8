@@ -18,10 +18,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install Missing Libtinfo5
+    - name: Install Missing Libtinfo5 Manually
       run: |
-        sudo apt-get update
-        sudo apt-get install -y libtinfo5
+        wget http://azure.archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.4-2_amd64.deb
+        sudo dpkg -i libtinfo5_6.4-2_amd64.deb
         
     - name: Install mkbootimg
       run: |
