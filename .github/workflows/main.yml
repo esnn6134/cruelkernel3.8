@@ -24,11 +24,87 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libtinfo5
         
-    - name: Install Stable mkbootimg
+    - name: Create Inline mkbootimg
       run: |
-        wget -q https://raw.githubusercontent.com/osm0sis/mkbootimg/master/mkbootimg.py -O mkbootimg
+        cat << 'EOF' > mkbootimg
+        #!/usr/bin/env python3
+        from os import seek_set
+        import sys
+        from argparse import ArgumentParser, FileType
+        def parse_cmdline(cmdline):
+            cmdline = cmdline.encode('utf-8')
+            if len(cmdline) > 512: raise ValueError('cmdline too large')
+            return cmdline + b'\x00' * (512 - len(cmdline))
+        def write_header(args):
+            args.output.write(b'ANDROID!')
+            args.output.write((0).to_bytes(4, 'little')) # kernel_size placeholder
+            args.output.write(int(args.base, 16).to_bytes(4, 'little'))
+            args.output.write((0).to_bytes(4, 'little')) # ramdisk_size placeholder
+            args.output.write(int(args.ramdisk_offset, 16).to_bytes(4, 'little'))
+            args.output.write((0).to_bytes(4, 'little')) # second_size placeholder
+            args.output.write(int(args.second_offset, 16).to_bytes(4, 'little'))
+            args.output.write(int(args.tags_offset, 16).to_bytes(4, 'little'))
+            args.output.write(int(args.pagesize).to_bytes(4, 'little'))
+            args.output.write(int(args.header_version).to_bytes(4, 'little'))
+            args.output.write(int(args.os_version.replace('.','')).to_bytes(4, 'little')) # crude padding
+            args.output.write(args.board.encode('utf-8').ljust(16, b'\x00'))
+            args.output.write(parse_cmdline(args.cmdline))
+            args.output.write(b'\x00' * 32) # id placeholder
+        def pad_file(f, padding):
+            pad = (padding - (f.tell() & (padding - 1))) & (padding - 1)
+            f.write(b'\x00' * pad)
+        def main():
+            p = ArgumentParser()
+            p.add_argument('--kernel', type=FileType('rb'), required=True)
+            p.add_argument('--ramdisk', type=FileType('rb'))
+            p.add_argument('--second', type=FileType('rb'))
+            p.add_argument('--cmdline', default='')
+            p.add_argument('--base', default='0x10000000')
+            p.add_argument('--kernel_offset', default='0x00008000')
+            p.add_argument('--ramdisk_offset', default='0x01000000')
+            p.add_argument('--second_offset', default='0x00f00000')
+            p.add_argument('--tags_offset', default='0x00000100')
+            p.add_argument('--pagesize', type=int, default=2048)
+            p.add_argument('--header_version', type=int, default=0)
+            p.add_argument('--os_version', default='0.0.0')
+            p.add_argument('--os_patch_level', default='2000-01')
+            p.add_argument('--board', default='')
+            p.add_argument('-o', '--output', type=FileType('wb'), required=True)
+            args = p.parse_args()
+            
+            write_header(args)
+            pad_file(args.output, args.pagesize)
+            
+            k_start = args.output.tell()
+            args.output.write(args.kernel.read())
+            k_size = args.output.tell() - k_start
+            pad_file(args.output, args.pagesize)
+            
+            r_start = args.output.tell()
+            r_size = 0
+            if args.ramdisk:
+                args.output.write(args.ramdisk.read())
+                r_size = args.output.tell() - r_start
+                pad_file(args.output, args.pagesize)
+                
+            s_start = args.output.tell()
+            s_size = 0
+            if args.second:
+                args.output.write(args.second.read())
+                s_size = args.output.tell() - s_start
+                pad_file(args.output, args.pagesize)
+                
+            args.output.seek(8, seek_set)
+            args.output.write(k_size.to_bytes(4, 'little'))
+            args.output.seek(16, seek_set)
+            args.output.write(r_size.to_bytes(4, 'little'))
+            args.output.seek(24, seek_set)
+            args.output.write(s_size.to_bytes(4, 'little'))
+        if __name__ == '__main__': main()
+        EOF
         chmod +x mkbootimg
         sudo mv mkbootimg /usr/local/bin/mkbootimg
+
     - name: Install mkdtboimg
       run: |
         wget -q https://android.googlesource.com/platform/system/libufdt/+archive/refs/heads/master.tar.gz -O - | tar --strip-components 2 -xzf - utils/src/mkdtboimg.py
