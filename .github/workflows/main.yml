@@ -1,4 +1,4 @@
-name: Build
+name: G970F
 
 on: [push]
 
@@ -11,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        model: [ "G973F" ]
+        model: [ "G970F" ]
 
     steps:
     - uses: actions/checkout@v2
@@ -43,10 +43,11 @@ jobs:
       run: |
         ./cruelbuild config                    \
                      model=${{ matrix.model }} \
-                     name="CRUEL-v3.8"         \
+                     name="CRUEL-v3.8-OC"      \
                      toolchain=$TOOLCHAIN      \
                      +magisk                   \
                      +nohardening              \
+                     +nohardening2             \
                      +ttl                      \
                      +wireguard                \
                      +cifs                     \
