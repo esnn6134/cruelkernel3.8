@@ -1,7 +1,8 @@
 name: G970F
 
 on:
-   workflow_dispatch:
+ workflow_dispatch:
+ push:
 
 env:
   TOOLCHAIN: default
